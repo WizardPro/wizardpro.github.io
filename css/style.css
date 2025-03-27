@@ -128,6 +128,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    width: 0; /* 防止内容撑开 */
+    min-width: 0; /* 确保可以收缩 */
 }
 
 textarea {
@@ -140,6 +142,8 @@ textarea {
     font-family: 'Consolas', monospace;
     font-size: 14px;
     resize: none;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 pre {
@@ -152,6 +156,9 @@ pre {
     overflow: auto;
     font-family: 'Consolas', monospace;
     font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+    white-space: pre;
 }
 
 pre.wrap {
@@ -159,22 +166,22 @@ pre.wrap {
     word-wrap: break-word;
 }
 
-pre::-webkit-scrollbar {
+pre::-webkit-scrollbar, textarea::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
-pre::-webkit-scrollbar-track {
+pre::-webkit-scrollbar-track, textarea::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 4px;
 }
 
-pre::-webkit-scrollbar-thumb {
+pre::-webkit-scrollbar-thumb, textarea::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
 }
 
-pre::-webkit-scrollbar-thumb:hover {
+pre::-webkit-scrollbar-thumb:hover, textarea::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
