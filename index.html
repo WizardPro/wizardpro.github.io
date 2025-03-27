@@ -57,14 +57,27 @@
                             @input="formatJSON"
                         ></textarea>
                         <div class="button-group">
-                            <button @click="formatJSON">格式化</button>
-                            <button @click="copyToClipboard('json')">复制</button>
-                            <button @click="clearJSON">清空</button>
+                            <button @click="formatJSON">
+                                <i class="ri-code-line"></i>
+                                格式化
+                            </button>
+                            <button @click="copyToClipboard('json')">
+                                <i class="ri-file-copy-line"></i>
+                                复制
+                            </button>
+                            <button @click="clearJSON">
+                                <i class="ri-delete-bin-line"></i>
+                                清空
+                            </button>
+                            <button @click="toggleWrap('json')" :class="{ active: jsonWrap }">
+                                <i class="ri-text-wrap"></i>
+                                自动换行
+                            </button>
                         </div>
                     </div>
 
                     <div class="output-area">
-                        <pre><code class="language-json">{{jsonOutput}}</code></pre>
+                        <pre><code :class="['language-json', { wrap: jsonWrap }]">{{jsonOutput}}</code></pre>
                     </div>
                 </div>
             </div>
@@ -86,14 +99,27 @@
                             @input="formatSQL"
                         ></textarea>
                         <div class="button-group">
-                            <button @click="formatSQL">美化</button>
-                            <button @click="copyToClipboard('sql')">复制</button>
-                            <button @click="clearSQL">清空</button>
+                            <button @click="formatSQL">
+                                <i class="ri-code-line"></i>
+                                美化
+                            </button>
+                            <button @click="copyToClipboard('sql')">
+                                <i class="ri-file-copy-line"></i>
+                                复制
+                            </button>
+                            <button @click="clearSQL">
+                                <i class="ri-delete-bin-line"></i>
+                                清空
+                            </button>
+                            <button @click="toggleWrap('sql')" :class="{ active: sqlWrap }">
+                                <i class="ri-text-wrap"></i>
+                                自动换行
+                            </button>
                         </div>
                     </div>
 
                     <div class="output-area">
-                        <pre><code class="language-sql">{{sqlOutput}}</code></pre>
+                        <pre><code :class="['language-sql', { wrap: sqlWrap }]">{{sqlOutput}}</code></pre>
                     </div>
                 </div>
             </div>
