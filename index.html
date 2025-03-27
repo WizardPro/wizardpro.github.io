@@ -13,6 +13,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
     <!-- 添加图标 -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
@@ -34,9 +35,13 @@
                 <i class="ri-braces-line"></i>
                 JSON 格式化
             </button>
+            <button class="tool-button" @click="openTool('sql')">
+                <i class="ri-database-2-line"></i>
+                SQL 美化
+            </button>
         </div>
 
-        <!-- 工具面板 -->
+        <!-- JSON工具面板 -->
         <div class="tool-panel" :class="{ active: currentTool === 'json' }" v-if="currentTool === 'json'">
             <div class="json-tool">
                 <div class="tool-header">
@@ -53,13 +58,42 @@
                         ></textarea>
                         <div class="button-group">
                             <button @click="formatJSON">格式化</button>
-                            <button @click="copyToClipboard">复制</button>
+                            <button @click="copyToClipboard('json')">复制</button>
                             <button @click="clearJSON">清空</button>
                         </div>
                     </div>
 
                     <div class="output-area">
                         <pre><code class="language-json">{{jsonOutput}}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SQL工具面板 -->
+        <div class="tool-panel" :class="{ active: currentTool === 'sql' }" v-if="currentTool === 'sql'">
+            <div class="sql-tool">
+                <div class="tool-header">
+                    <h2>SQL 美化工具</h2>
+                    <button class="close-button" @click="closeTool">&times;</button>
+                </div>
+                
+                <div class="tool-content">
+                    <div class="input-area">
+                        <textarea 
+                            v-model="sqlInput"
+                            placeholder="请输入需要美化的SQL语句..."
+                            @input="formatSQL"
+                        ></textarea>
+                        <div class="button-group">
+                            <button @click="formatSQL">美化</button>
+                            <button @click="copyToClipboard('sql')">复制</button>
+                            <button @click="clearSQL">清空</button>
+                        </div>
+                    </div>
+
+                    <div class="output-area">
+                        <pre><code class="language-sql">{{sqlOutput}}</code></pre>
                     </div>
                 </div>
             </div>
