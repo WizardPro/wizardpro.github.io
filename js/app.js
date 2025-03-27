@@ -34,6 +34,48 @@ const lunarCalendar = {
     }
 };
 
+// SQL格式化函数
+const sqlFormatter = {
+    format: function(sql) {
+        if (!sql.trim()) return '';
+        
+        // 替换多余的空白字符
+        sql = sql.replace(/\s+/g, ' ').trim();
+        
+        // 主要关键字
+        const keywords = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT',
+                         'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE FROM'];
+        
+        // 次要关键字
+        const subKeywords = ['INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'FULL JOIN', 'ON', 'AND', 'OR',
+                           'UNION', 'UNION ALL', 'INTERSECT', 'EXCEPT'];
+        
+        // 格式化主要关键字
+        keywords.forEach(keyword => {
+            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+            sql = sql.replace(regex, `\n${keyword}`);
+        });
+        
+        // 格式化次要关键字
+        subKeywords.forEach(keyword => {
+            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+            sql = sql.replace(regex, `\n  ${keyword}`);
+        });
+        
+        // 处理括号
+        sql = sql.replace(/\(/g, '\n(')
+                .replace(/\)/g, ')\n');
+        
+        // 清理多余的空行
+        sql = sql.split('\n')
+                 .map(line => line.trim())
+                 .filter(line => line)
+                 .join('\n');
+        
+        return sql.toUpperCase();
+    }
+};
+
 const app = Vue.createApp({
     data() {
         return {
@@ -42,7 +84,9 @@ const app = Vue.createApp({
             lunar: '',
             currentTool: null,
             jsonInput: '',
-            jsonOutput: ''
+            jsonOutput: '',
+            sqlInput: '',
+            sqlOutput: ''
         }
     },
     methods: {
@@ -69,8 +113,13 @@ const app = Vue.createApp({
         
         openTool(tool) {
             this.currentTool = tool;
-            this.jsonInput = '';
-            this.jsonOutput = '';
+            if (tool === 'json') {
+                this.jsonInput = '';
+                this.jsonOutput = '';
+            } else if (tool === 'sql') {
+                this.sqlInput = '';
+                this.sqlOutput = '';
+            }
             document.body.style.overflow = 'hidden';
         },
         
@@ -98,10 +147,24 @@ const app = Vue.createApp({
             }
         },
         
-        copyToClipboard() {
-            if (!this.jsonOutput) return;
+        formatSQL() {
+            try {
+                this.sqlOutput = sqlFormatter.format(this.sqlInput);
+                
+                // 触发代码高亮
+                this.$nextTick(() => {
+                    Prism.highlightAll();
+                });
+            } catch (e) {
+                this.sqlOutput = `错误: ${e.message}`;
+            }
+        },
+        
+        copyToClipboard(type) {
+            const content = type === 'json' ? this.jsonOutput : this.sqlOutput;
+            if (!content) return;
             
-            navigator.clipboard.writeText(this.jsonOutput)
+            navigator.clipboard.writeText(content)
                 .then(() => {
                     alert('已复制到剪贴板');
                 })
@@ -114,6 +177,11 @@ const app = Vue.createApp({
         clearJSON() {
             this.jsonInput = '';
             this.jsonOutput = '';
+        },
+        
+        clearSQL() {
+            this.sqlInput = '';
+            this.sqlOutput = '';
         }
     },
     mounted() {
