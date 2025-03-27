@@ -1,114 +1,18 @@
-// 农历转换函数
-const lunarCalendar = {
-    lunar: function(year, month, day) {
-        const lunarInfo = [
-            0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
-            0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
-            0x04970, 0x0a4b0, 0x0b4b5, 0x06a50, 0x06d40, 0x1ab54, 0x02b60, 0x09570, 0x052f2, 0x04970,
-            0x06566, 0x0d4a0, 0x0ea50, 0x06e95, 0x05ad0, 0x02b60, 0x186e3, 0x092e0, 0x1c8d7, 0x0c950,
-            0x0d4a0, 0x1d8a6, 0x0b550, 0x056a0, 0x1a5b4, 0x025d0, 0x092d0, 0x0d2b2, 0x0a950, 0x0b557
-        ];
-        
-        const monthCn = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
-        const dayCn = ['初一', '初二', '初三', '初四', '初五', '初六', '初七', '初八', '初九', '初十',
-                      '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十',
-                      '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十'];
-        
-        // 计算农历日期
-        let total = 0;
-        for(let i = 1900; i < year; i++) {
-            total += lunarInfo[i - 1900] & 0xffff;
-        }
-        let offset = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(1900, 0, 31)) / 86400000);
-        let temp = 0;
-        for(let i = 0; i < month; i++) {
-            temp += new Date(year, i + 1, 0).getDate();
-        }
-        offset -= temp - day + 1;
-        
-        let days = offset + 40;
-        let monthIdx = 0;
-        let dayIdx = days % 30;
-        
-        return monthCn[monthIdx] + '月' + dayCn[dayIdx];
-    }
-};
-
-// SQL格式化函数
-const sqlFormatter = {
-    format: function(sql) {
-        if (!sql.trim()) return '';
-        
-        // 替换多余的空白字符
-        sql = sql.replace(/\s+/g, ' ').trim();
-        
-        // 主要关键字
-        const keywords = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT',
-                         'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE FROM'];
-        
-        // 次要关键字
-        const subKeywords = ['INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'FULL JOIN', 'ON', 'AND', 'OR',
-                           'UNION', 'UNION ALL', 'INTERSECT', 'EXCEPT'];
-        
-        // 格式化主要关键字
-        keywords.forEach(keyword => {
-            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-            sql = sql.replace(regex, `\n${keyword}`);
-        });
-        
-        // 格式化次要关键字
-        subKeywords.forEach(keyword => {
-            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-            sql = sql.replace(regex, `\n  ${keyword}`);
-        });
-        
-        // 处理括号
-        sql = sql.replace(/\(/g, '\n(')
-                .replace(/\)/g, ')\n');
-        
-        // 清理多余的空行
-        sql = sql.split('\n')
-                 .map(line => line.trim())
-                 .filter(line => line)
-                 .join('\n');
-        
-        return sql.toUpperCase();
-    }
-};
-
 const app = Vue.createApp({
     data() {
         return {
             time: '',
             date: '',
             lunar: '',
-            currentTool: null,
+            activePanel: null,
             jsonInput: '',
             jsonOutput: '',
             sqlInput: '',
             sqlOutput: '',
-            jsonWrap: false,
-            sqlWrap: false,
+            isJsonWrapped: false,
+            isSqlWrapped: false,
             showToast: false,
-            toastMessage: '',
-            toastTimer: null
-        }
-    },
-    watch: {
-        // 监听输入变化，自动格式化
-        jsonInput: function(val) {
-            if (val.trim()) {
-                this.formatJSON();
-            } else {
-                this.jsonOutput = '';
-            }
-        },
-        sqlInput: function(val) {
-            if (val.trim()) {
-                this.formatSQL();
-            } else {
-                this.sqlOutput = '';
-            }
+            toastMessage: ''
         }
     },
     methods: {
@@ -118,8 +22,7 @@ const app = Vue.createApp({
             // 更新时间
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            this.time = `${hours}:${minutes}:${seconds}`;
+            this.time = `${hours}:${minutes}`;
             
             // 更新日期
             const year = now.getFullYear();
@@ -130,107 +33,122 @@ const app = Vue.createApp({
             this.date = `${year}年${month}月${day}日 ${weekday}`;
             
             // 更新农历
-            this.lunar = '农历 ' + lunarCalendar.lunar(year, parseInt(month), parseInt(day));
+            const lunar = calendar.solar2lunar(year, parseInt(month), parseInt(day));
+            this.lunar = `农历${lunar.IMonthCn}${lunar.IDayCn}`;
         },
-        
-        showToastMessage(message) {
-            if (this.toastTimer) {
-                clearTimeout(this.toastTimer);
+        showPanel(type) {
+            this.activePanel = type;
+        },
+        closePanel() {
+            this.activePanel = null;
+        },
+        formatJSON() {
+            try {
+                const parsed = JSON.parse(this.jsonInput);
+                this.jsonOutput = JSON.stringify(parsed, null, 4);
+                this.showToastMessage('格式化成功');
+            } catch (e) {
+                this.showToastMessage('无效的 JSON 格式');
             }
-            this.toastMessage = message;
-            this.showToast = true;
-            this.toastTimer = setTimeout(() => {
-                this.showToast = false;
-            }, 2000);
         },
-        
-        openTool(tool) {
-            this.currentTool = tool;
-            if (tool === 'json') {
+        formatSQL() {
+            try {
+                let sql = this.sqlInput.trim();
+                
+                // 替换多余的空白字符
+                sql = sql.replace(/\s+/g, ' ');
+                
+                // 大写关键字
+                const keywords = ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'ORDER BY', 'GROUP BY', 'HAVING', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'OUTER JOIN', 'ON', 'IN', 'LIKE', 'LIMIT', 'OFFSET', 'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'CREATE', 'ALTER', 'DROP', 'TABLE', 'INDEX', 'VIEW', 'PROCEDURE', 'FUNCTION', 'TRIGGER'];
+                
+                keywords.forEach(keyword => {
+                    const regex = new RegExp('\\b' + keyword + '\\b', 'gi');
+                    sql = sql.replace(regex, keyword);
+                });
+                
+                // 在主要关键字前添加换行
+                const mainKeywords = ['SELECT', 'FROM', 'WHERE', 'ORDER BY', 'GROUP BY', 'HAVING', 'LIMIT'];
+                mainKeywords.forEach(keyword => {
+                    sql = sql.replace(new RegExp('\\b' + keyword + '\\b', 'g'), '\n' + keyword);
+                });
+                
+                // 处理 JOIN 语句
+                const joinKeywords = ['LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'OUTER JOIN', 'JOIN'];
+                joinKeywords.forEach(keyword => {
+                    sql = sql.replace(new RegExp('\\b' + keyword + '\\b', 'g'), '\n  ' + keyword);
+                });
+                
+                // 处理 AND 和 OR
+                sql = sql.replace(/\bAND\b/g, '\n  AND');
+                sql = sql.replace(/\bOR\b/g, '\n  OR');
+                
+                // 格式化括号
+                sql = sql.replace(/\(/g, ' (');
+                sql = sql.replace(/\)/g, ') ');
+                
+                // 删除多余的空格和换行
+                sql = sql.replace(/\s+/g, ' ').trim();
+                sql = sql.replace(/\n\s*/g, '\n');
+                
+                this.sqlOutput = sql.trim();
+                this.showToastMessage('格式化成功');
+            } catch (e) {
+                this.showToastMessage('格式化失败');
+            }
+        },
+        toggleJsonWrap() {
+            this.isJsonWrapped = !this.isJsonWrapped;
+            const pre = document.querySelector('#jsonOutput');
+            if (this.isJsonWrapped) {
+                pre.classList.add('wrap');
+            } else {
+                pre.classList.remove('wrap');
+            }
+        },
+        toggleSqlWrap() {
+            this.isSqlWrapped = !this.isSqlWrapped;
+            const pre = document.querySelector('#sqlOutput');
+            if (this.isSqlWrapped) {
+                pre.classList.add('wrap');
+            } else {
+                pre.classList.remove('wrap');
+            }
+        },
+        copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                this.showToastMessage('已复制到剪贴板');
+            }).catch(() => {
+                this.showToastMessage('复制失败');
+            });
+        },
+        clearContent(type) {
+            if (type === 'json') {
                 this.jsonInput = '';
                 this.jsonOutput = '';
-            } else if (tool === 'sql') {
+            } else if (type === 'sql') {
                 this.sqlInput = '';
                 this.sqlOutput = '';
             }
-            document.body.style.overflow = 'hidden';
         },
-        
-        closeTool() {
-            this.currentTool = null;
-            document.body.style.overflow = '';
-        },
-        
-        formatJSON() {
-            try {
-                if (!this.jsonInput.trim()) {
-                    this.jsonOutput = '';
-                    return;
-                }
-                const parsed = JSON.parse(this.jsonInput);
-                this.jsonOutput = JSON.stringify(parsed, null, 2);
-                this.$nextTick(() => {
-                    Prism.highlightAll();
-                });
-            } catch (e) {
-                this.jsonOutput = `错误: ${e.message}`;
-            }
-        },
-        
-        formatSQL() {
-            try {
-                this.sqlOutput = sqlFormatter.format(this.sqlInput);
-                this.$nextTick(() => {
-                    Prism.highlightAll();
-                });
-            } catch (e) {
-                this.sqlOutput = `错误: ${e.message}`;
-            }
-        },
-        
-        copyToClipboard(type) {
-            const content = type === 'json' ? this.jsonOutput : this.sqlOutput;
-            if (!content) return;
-            
-            navigator.clipboard.writeText(content)
-                .then(() => {
-                    this.showToastMessage('复制成功');
-                })
-                .catch(err => {
-                    console.error('复制失败:', err);
-                    this.showToastMessage('复制失败，请手动复制');
-                });
-        },
-        
-        clearJSON() {
-            this.jsonInput = '';
-            this.jsonOutput = '';
-        },
-        
-        clearSQL() {
-            this.sqlInput = '';
-            this.sqlOutput = '';
-        },
-        
-        toggleWrap(type) {
-            if (type === 'json') {
-                this.jsonWrap = !this.jsonWrap;
-            } else if (type === 'sql') {
-                this.sqlWrap = !this.sqlWrap;
-            }
-            this.$nextTick(() => {
-                Prism.highlightAll();
-            });
+        showToastMessage(message) {
+            this.toastMessage = message;
+            this.showToast = true;
+            setTimeout(() => {
+                this.showToast = false;
+            }, 2000);
         }
     },
     mounted() {
         this.updateTime();
         setInterval(this.updateTime, 1000);
         
+        // 添加 ESC 键关闭面板
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.currentTool) {
-                this.closeTool();
+            if (e.key === 'Escape') {
+                this.closePanel();
             }
         });
     }
-}).mount('#app');
+});
+
+app.mount('#app');
