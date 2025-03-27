@@ -5,94 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>时钟</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.9.55/css/materialdesignicons.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="js/calendar.js"></script>
 </head>
 <body>
     <div id="app">
-        <div class="time">{{ time }}</div>
-        <div class="date">{{ date }}</div>
-        <div class="lunar">{{ lunar }}</div>
-        
-        <div class="tool-buttons">
-            <button class="tool-button" @click="openTool('json')">
-                <i class="ri-braces-line"></i>
-                JSON格式化
-            </button>
-            <button class="tool-button" @click="openTool('sql')">
-                <i class="ri-database-2-line"></i>
-                SQL美化
-            </button>
-        </div>
-        
-        <div class="tool-panel" v-if="currentTool === 'json'">
-            <div class="input-area">
-                <textarea v-model="jsonInput" placeholder="请输入需要格式化的JSON"></textarea>
-                <div class="button-group">
-                    <button @click="formatJSON">
-                        <i class="ri-magic-line"></i>
-                        格式化
-                    </button>
-                    <button @click="toggleWrap('json')">
-                        <i class="ri-text-wrap"></i>
-                        {{ jsonWrap ? '关闭换行' : '自动换行' }}
-                    </button>
-                    <button @click="clearJSON">
-                        <i class="ri-delete-bin-line"></i>
-                        清除
-                    </button>
-                </div>
-            </div>
-            <div class="output-area">
-                <pre :class="{ wrap: jsonWrap }"><code class="language-json">{{ jsonOutput }}</code></pre>
-                <div class="button-group">
-                    <button @click="copyToClipboard('json')">
-                        <i class="ri-file-copy-line"></i>
-                        复制
-                    </button>
-                </div>
-            </div>
-            <button class="close-button" @click="closeTool">×</button>
-        </div>
-        
-        <div class="tool-panel" v-if="currentTool === 'sql'">
-            <div class="input-area">
-                <textarea v-model="sqlInput" placeholder="请输入需要美化的SQL"></textarea>
-                <div class="button-group">
-                    <button @click="formatSQL">
-                        <i class="ri-magic-line"></i>
-                        美化
-                    </button>
-                    <button @click="toggleWrap('sql')">
-                        <i class="ri-text-wrap"></i>
-                        {{ sqlWrap ? '关闭换行' : '自动换行' }}
-                    </button>
-                    <button @click="clearSQL">
-                        <i class="ri-delete-bin-line"></i>
-                        清除
-                    </button>
-                </div>
-            </div>
-            <div class="output-area">
-                <pre :class="{ wrap: sqlWrap }"><code class="language-sql">{{ sqlOutput }}</code></pre>
-                <div class="button-group">
-                    <button @click="copyToClipboard('sql')">
-                        <i class="ri-file-copy-line"></i>
-                        复制
-                    </button>
-                </div>
-            </div>
-            <button class="close-button" @click="closeTool">×</button>
+        <div class="clock">
+            <h1 class="time">{{ time }}</h1>
+            <p class="date">{{ date }}</p>
+            <p class="lunar">{{ lunar }}</p>
         </div>
 
-        <!-- Toast 提示 -->
-        <div class="toast" :class="{ show: showToast }">{{ toastMessage }}</div>
+        <div class="tool-buttons">
+            <button class="tool-button" @click="showPanel('json')" title="JSON格式化">
+                <i class="mdi mdi-code-json"></i>
+            </button>
+            <button class="tool-button" @click="showPanel('sql')" title="SQL美化">
+                <i class="mdi mdi-database"></i>
+            </button>
+        </div>
+
+        <div v-if="activePanel === 'json'" class="tool-panel">
+            <h2 class="tool-title">JSON 格式化工具</h2>
+            <button class="close-button" @click="closePanel">&times;</button>
+            <div class="panel-content">
+                <div class="input-area">
+                    <textarea v-model="jsonInput" placeholder="请输入要格式化的 JSON"></textarea>
+                    <div class="button-group">
+                        <button class="format-button" @click="formatJSON">格式化</button>
+                        <button class="wrap-button" :class="{ active: isJsonWrapped }" @click="toggleJsonWrap">自动换行</button>
+                        <button class="format-button" @click="clearContent('json')">清空</button>
+                    </div>
+                </div>
+                <div class="output-area">
+                    <pre id="jsonOutput" :class="{ wrap: isJsonWrapped }">{{ jsonOutput }}</pre>
+                    <div class="button-group">
+                        <button class="format-button" @click="copyToClipboard(jsonOutput)" v-if="jsonOutput">复制</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="activePanel === 'sql'" class="tool-panel">
+            <h2 class="tool-title">SQL 美化工具</h2>
+            <button class="close-button" @click="closePanel">&times;</button>
+            <div class="panel-content">
+                <div class="input-area">
+                    <textarea v-model="sqlInput" placeholder="请输入要美化的 SQL"></textarea>
+                    <div class="button-group">
+                        <button class="format-button" @click="formatSQL">格式化</button>
+                        <button class="wrap-button" :class="{ active: isSqlWrapped }" @click="toggleSqlWrap">自动换行</button>
+                        <button class="format-button" @click="clearContent('sql')">清空</button>
+                    </div>
+                </div>
+                <div class="output-area">
+                    <pre id="sqlOutput" :class="{ wrap: isSqlWrapped }">{{ sqlOutput }}</pre>
+                    <div class="button-group">
+                        <button class="format-button" @click="copyToClipboard(sqlOutput)" v-if="sqlOutput">复制</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="toast" v-if="showToast">{{ toastMessage }}</div>
     </div>
 
-    <script src="https://unpkg.com/vue@3.3.4/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sql.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
