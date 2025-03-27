@@ -7,12 +7,20 @@ const app = createApp({
             date: '',
             jsonInput: '',
             jsonOutput: '',
-            week: ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+            week: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
+            currentTool: null
         }
     },
     mounted() {
         this.updateTime();
         setInterval(this.updateTime, 1000);
+        
+        // 添加ESC键关闭面板
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.closeTool();
+            }
+        });
     },
     methods: {
         updateTime() {
@@ -31,6 +39,17 @@ const app = createApp({
                 (now.getMonth() + 1).toString().padStart(2, '0'),
                 now.getDate().toString().padStart(2, '0')
             ].join('-') + ' ' + this.week[now.getDay()];
+        },
+        openTool(toolName) {
+            this.currentTool = toolName;
+            // 工具打开时重置内容
+            if (toolName === 'json') {
+                this.jsonInput = '';
+                this.jsonOutput = '';
+            }
+        },
+        closeTool() {
+            this.currentTool = null;
         },
         formatJSON() {
             try {
