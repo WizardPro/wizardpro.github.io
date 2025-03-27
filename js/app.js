@@ -88,7 +88,10 @@ const app = Vue.createApp({
             sqlInput: '',
             sqlOutput: '',
             jsonWrap: false,
-            sqlWrap: false
+            sqlWrap: false,
+            showToast: false,
+            toastMessage: '',
+            toastTimer: null
         }
     },
     methods: {
@@ -111,6 +114,22 @@ const app = Vue.createApp({
             
             // 更新农历
             this.lunar = '农历 ' + lunarCalendar.lunar(year, parseInt(month), parseInt(day));
+        },
+        
+        showToastMessage(message) {
+            // 清除之前的定时器
+            if (this.toastTimer) {
+                clearTimeout(this.toastTimer);
+            }
+            
+            // 显示新消息
+            this.toastMessage = message;
+            this.showToast = true;
+            
+            // 2秒后自动隐藏
+            this.toastTimer = setTimeout(() => {
+                this.showToast = false;
+            }, 2000);
         },
         
         openTool(tool) {
@@ -168,11 +187,11 @@ const app = Vue.createApp({
             
             navigator.clipboard.writeText(content)
                 .then(() => {
-                    alert('已复制到剪贴板');
+                    this.showToastMessage('复制成功');
                 })
                 .catch(err => {
                     console.error('复制失败:', err);
-                    alert('复制失败，请手动复制');
+                    this.showToastMessage('复制失败，请手动复制');
                 });
         },
         
