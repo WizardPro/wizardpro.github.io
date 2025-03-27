@@ -24,11 +24,12 @@
             <div class="clock">
                 <div class="time">{{time}}</div>
                 <div class="date">{{date}}</div>
+                <div class="lunar">{{lunar}}</div>
             </div>
         </div>
 
         <!-- 工具按钮 -->
-        <div class="tools-container">
+        <div class="tools-buttons">
             <button class="tool-button" @click="openTool('json')">
                 <i class="ri-braces-line"></i>
                 JSON 格式化
@@ -65,6 +66,7 @@
         </div>
     </div>
 
+    <script src="js/calendar.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
