@@ -1,196 +1,151 @@
-// 确保 Vue 已加载
-if (typeof Vue === 'undefined') {
-    console.error('Vue is not loaded!');
-} else {
-    console.log('Vue version:', Vue.version);
-}
-
-// 确保 Lunar 已加载
-if (typeof Lunar === 'undefined') {
-    console.error('Lunar is not loaded!');
-} else {
-    console.log('Lunar is loaded');
-}
-
-// 等待 DOM 加载完成
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded');
     
-    try {
-        const { createApp } = Vue;
-        const app = createApp({
-            data() {
-                return {
-                    time: '',
-                    date: '',
-                    lunar: '',
-                    activePanel: '',
-                    jsonInput: '',
-                    jsonOutput: '',
-                    sqlInput: '',
-                    sqlOutput: '',
-                    isJsonWrapped: true,
-                    isSqlWrapped: true,
-                    showToast: false,
-                    toastMessage: ''
-                }
-            },
-            methods: {
-                updateTime() {
-                    try {
-                        const now = new Date();
-                        
-                        // 更新时间
-                        const hours = String(now.getHours()).padStart(2, '0');
-                        const minutes = String(now.getMinutes()).padStart(2, '0');
-                        const seconds = String(now.getSeconds()).padStart(2, '0');
-                        this.time = `${hours}:${minutes}:${seconds}`;
-                        
-                        // 更新日期
-                        const year = now.getFullYear();
-                        const month = String(now.getMonth() + 1).padStart(2, '0');
-                        const day = String(now.getDate()).padStart(2, '0');
-                        const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-                        const weekDay = weekDays[now.getDay()];
-                        this.date = `${year}年${month}月${day}日 ${weekDay}`;
-                        
-                        // 更新农历
-                        if (typeof Lunar !== 'undefined') {
-                            const lunar = Lunar.fromDate(now);
-                            this.lunar = lunar.getYearInChinese() + '年' + 
-                                      lunar.getMonthInChinese() + '月' +
-                                      lunar.getDayInChinese();
-                        } else {
-                            console.error('Lunar is not available');
-                            this.lunar = '农历加载中...';
-                        }
-                    } catch (err) {
-                        console.error('Error in updateTime:', err);
-                    }
-                },
-                showPanel(type) {
-                    this.activePanel = type;
-                },
-                closePanel() {
-                    this.activePanel = '';
-                },
-                formatJSON() {
-                    try {
-                        const parsed = JSON.parse(this.jsonInput.trim() || '{}');
-                        this.jsonOutput = JSON.stringify(parsed, null, 2);
-                        this.showToastMessage('格式化成功');
-                    } catch (e) {
-                        console.error('JSON parse error:', e);
-                        this.showToastMessage('JSON格式错误');
-                    }
-                },
-                formatSQL() {
-                    try {
-                        let sql = this.sqlInput.trim();
-                        if (!sql) {
-                            this.sqlOutput = '';
-                            return;
-                        }
-
-                        // 统一换行和空格
-                        sql = sql.replace(/\s+/g, ' ');
-
-                        // 主要关键字
-                        const keywords = [
-                            'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY',
-                            'LIMIT', 'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE FROM'
-                        ];
-
-                        // 次要关键字
-                        const subKeywords = [
-                            'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'OUTER JOIN', 'JOIN',
-                            'AND', 'OR', 'ON', 'AS'
-                        ];
-
-                        // 大写所有关键字
-                        keywords.forEach(keyword => {
-                            const regex = new RegExp('\\b' + keyword + '\\b', 'gi');
-                            sql = sql.replace(regex, keyword);
-                        });
-
-                        subKeywords.forEach(keyword => {
-                            const regex = new RegExp('\\b' + keyword + '\\b', 'gi');
-                            sql = sql.replace(regex, keyword);
-                        });
-
-                        // 添加换行和缩进
-                        keywords.forEach(keyword => {
-                            sql = sql.replace(new RegExp('\\b' + keyword + '\\b', 'g'), '\n' + keyword);
-                        });
-
-                        subKeywords.forEach(keyword => {
-                            sql = sql.replace(new RegExp('\\b' + keyword + '\\b', 'g'), '\n  ' + keyword);
-                        });
-
-                        // 处理括号
-                        sql = sql.replace(/\(/g, '\n(');
-                        sql = sql.replace(/\)/g, ')\n');
-
-                        // 清理多余的换行和空格
-                        sql = sql.replace(/\s*\n\s*/g, '\n');
-                        sql = sql.replace(/\n+/g, '\n');
-                        sql = sql.trim();
-
-                        this.sqlOutput = sql;
-                        this.showToastMessage('格式化成功');
-                    } catch (err) {
-                        console.error('SQL format error:', err);
-                        this.showToastMessage('SQL格式化失败');
-                    }
-                },
-                toggleJsonWrap() {
-                    this.isJsonWrapped = !this.isJsonWrapped;
-                },
-                toggleSqlWrap() {
-                    this.isSqlWrapped = !this.isSqlWrapped;
-                },
-                clearContent(type) {
-                    if (type === 'json') {
-                        this.jsonInput = '';
-                        this.jsonOutput = '';
-                    } else if (type === 'sql') {
-                        this.sqlInput = '';
-                        this.sqlOutput = '';
-                    }
-                },
-                async copyToClipboard(text) {
-                    try {
-                        await navigator.clipboard.writeText(text);
-                        this.showToastMessage('复制成功');
-                    } catch (err) {
-                        console.error('Copy error:', err);
-                        this.showToastMessage('复制失败');
-                    }
-                },
-                showToastMessage(message) {
-                    this.toastMessage = message;
-                    this.showToast = true;
-                    setTimeout(() => {
-                        this.showToast = false;
-                    }, 2000);
-                }
-            },
-            mounted() {
-                console.log('Vue app mounted');
-                this.updateTime();
-                setInterval(this.updateTime, 1000);
-            }
-        });
-
-        // 挂载应用
-        const mountTarget = document.getElementById('app');
-        if (mountTarget) {
-            app.mount(mountTarget);
-            console.log('Vue app mounted successfully');
-        } else {
-            console.error('Mount target #app not found!');
-        }
-    } catch (err) {
-        console.error('Failed to initialize Vue app:', err);
+    // 确保Vue已加载
+    if (typeof Vue === 'undefined') {
+        console.error('Vue is not loaded!');
+        return;
     }
+
+    // 确保Lunar已加载
+    if (typeof Lunar === 'undefined') {
+        console.error('Lunar is not loaded!');
+        return;
+    }
+
+    new Vue({
+        el: '#app',
+        data: {
+            time: '',
+            date: '',
+            lunar: '',
+            showJsonTool: false,
+            showSqlTool: false,
+            jsonInput: '',
+            jsonOutput: '',
+            sqlInput: '',
+            sqlOutput: '',
+            jsonWrap: false,
+            sqlWrap: false,
+            showToast: false,
+            toastMessage: '',
+            toastTimer: null
+        },
+        mounted() {
+            this.updateTime();
+            setInterval(this.updateTime, 1000);
+        },
+        methods: {
+            updateTime() {
+                try {
+                    const now = new Date();
+                    
+                    // 更新时间
+                    this.time = now.toLocaleTimeString('zh-CN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
+                    
+                    // 更新日期
+                    this.date = now.getFullYear() + '年' + 
+                               String(now.getMonth() + 1).padStart(2, '0') + '月' +
+                               String(now.getDate()).padStart(2, '0') + '日 星期' +
+                               '日一二三四五六'.charAt(now.getDay());
+                    
+                    // 更新农历
+                    const lunar = new Lunar(now);
+                    this.lunar = lunar.toString();
+                } catch (error) {
+                    console.error('Error updating time:', error);
+                }
+            },
+            formatJSON() {
+                try {
+                    const parsed = JSON.parse(this.jsonInput);
+                    this.jsonOutput = JSON.stringify(parsed, null, 2);
+                    this.showToastMessage('格式化成功');
+                } catch (error) {
+                    this.jsonOutput = '错误：无效的 JSON 格式';
+                    this.showToastMessage('格式化失败：无效的 JSON 格式');
+                }
+            },
+            formatSQL() {
+                try {
+                    let sql = this.sqlInput.trim();
+                    
+                    // 转换关键字为大写
+                    const keywords = ['SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'OFFSET', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'ALTER', 'DROP', 'AND', 'OR', 'IN', 'BETWEEN', 'LIKE', 'IS', 'NULL', 'NOT', 'DISTINCT'];
+                    
+                    keywords.forEach(keyword => {
+                        const regex = new RegExp('\\b' + keyword + '\\b', 'gi');
+                        sql = sql.replace(regex, keyword);
+                    });
+                    
+                    // 在主要关键字前添加换行
+                    sql = sql.replace(/\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|HAVING|LIMIT)\b/g, '\n$1');
+                    
+                    // 缩进子句
+                    sql = sql.replace(/\b(JOIN|AND|OR)\b/g, '\n  $1');
+                    
+                    // 格式化括号
+                    sql = sql.replace(/\(/g, '\n(');
+                    sql = sql.replace(/\)/g, ')\n');
+                    
+                    // 清理多余的空白字符
+                    sql = sql.replace(/\s+/g, ' ').trim();
+                    sql = sql.replace(/\n\s*/g, '\n');
+                    sql = sql.replace(/\n+/g, '\n');
+                    
+                    this.sqlOutput = sql;
+                    this.showToastMessage('格式化成功');
+                } catch (error) {
+                    this.sqlOutput = '错误：SQL 格式化失败';
+                    this.showToastMessage('格式化失败');
+                }
+            },
+            copyJsonOutput() {
+                this.copyToClipboard(this.jsonOutput);
+            },
+            copySqlOutput() {
+                this.copyToClipboard(this.sqlOutput);
+            },
+            copyToClipboard(text) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    this.showToastMessage('复制成功');
+                } catch (err) {
+                    this.showToastMessage('复制失败');
+                }
+                document.body.removeChild(textarea);
+            },
+            clearJson() {
+                this.jsonInput = '';
+                this.jsonOutput = '';
+                this.showToastMessage('已清空');
+            },
+            clearSql() {
+                this.sqlInput = '';
+                this.sqlOutput = '';
+                this.showToastMessage('已清空');
+            },
+            showToastMessage(message) {
+                this.toastMessage = message;
+                this.showToast = true;
+                
+                if (this.toastTimer) {
+                    clearTimeout(this.toastTimer);
+                }
+                
+                this.toastTimer = setTimeout(() => {
+                    this.showToast = false;
+                }, 2000);
+            }
+        }
+    });
 });
