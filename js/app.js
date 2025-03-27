@@ -86,7 +86,9 @@ const app = Vue.createApp({
             jsonInput: '',
             jsonOutput: '',
             sqlInput: '',
-            sqlOutput: ''
+            sqlOutput: '',
+            jsonWrap: false,
+            sqlWrap: false
         }
     },
     methods: {
@@ -182,6 +184,18 @@ const app = Vue.createApp({
         clearSQL() {
             this.sqlInput = '';
             this.sqlOutput = '';
+        },
+        
+        toggleWrap(type) {
+            if (type === 'json') {
+                this.jsonWrap = !this.jsonWrap;
+            } else if (type === 'sql') {
+                this.sqlWrap = !this.sqlWrap;
+            }
+            // 重新触发代码高亮
+            this.$nextTick(() => {
+                Prism.highlightAll();
+            });
         }
     },
     mounted() {
