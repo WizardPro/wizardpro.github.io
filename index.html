@@ -8,11 +8,11 @@
     <link rel="bookmark" href="favicon/favicon.ico">
     <link rel="stylesheet" type="text/css" href="css/style.css">
     <!-- 使用最新版 Vue -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <!-- 添加代码高亮 -->
-    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
     <!-- 添加图标 -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
@@ -35,27 +35,31 @@
             </button>
         </div>
 
-        <!-- JSON工具面板 -->
-        <div class="tool-panel" :class="{ active: currentTool === 'json' }">
+        <!-- 工具面板 -->
+        <div class="tool-panel" :class="{ active: currentTool === 'json' }" v-if="currentTool === 'json'">
             <div class="json-tool">
-                <h2>JSON 格式化工具</h2>
-                <button class="close-button" @click="closeTool">×</button>
-                
-                <div class="input-area">
-                    <textarea 
-                        v-model="jsonInput"
-                        placeholder="请输入需要格式化的JSON文本..."
-                        @input="formatJSON"
-                    ></textarea>
-                    <div class="button-group">
-                        <button @click="formatJSON">格式化</button>
-                        <button @click="copyToClipboard">复制</button>
-                        <button @click="clearJSON">清空</button>
-                    </div>
+                <div class="tool-header">
+                    <h2>JSON 格式化工具</h2>
+                    <button class="close-button" @click="closeTool">&times;</button>
                 </div>
+                
+                <div class="tool-content">
+                    <div class="input-area">
+                        <textarea 
+                            v-model="jsonInput"
+                            placeholder="请输入需要格式化的JSON文本..."
+                            @input="formatJSON"
+                        ></textarea>
+                        <div class="button-group">
+                            <button @click="formatJSON">格式化</button>
+                            <button @click="copyToClipboard">复制</button>
+                            <button @click="clearJSON">清空</button>
+                        </div>
+                    </div>
 
-                <div class="output-area">
-                    <pre><code class="language-json">{{jsonOutput}}</code></pre>
+                    <div class="output-area">
+                        <pre><code class="language-json">{{jsonOutput}}</code></pre>
+                    </div>
                 </div>
             </div>
         </div>
