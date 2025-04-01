@@ -29,7 +29,8 @@ document.addEventListener('DOMContentLoaded', function() {
             sqlWrap: false,
             showToast: false,
             toastMessage: '',
-            toastTimer: null
+            toastTimer: null,
+            autoFormatDelay: null
         },
         mounted() {
             this.updateTime();
@@ -61,8 +62,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('Error updating time:', error);
                 }
             },
+            autoFormatJSON() {
+                if (this.autoFormatDelay) {
+                    clearTimeout(this.autoFormatDelay);
+                }
+                this.autoFormatDelay = setTimeout(() => {
+                    if (this.jsonInput.trim()) {
+                        this.formatJSON();
+                    }
+                }, 500);
+            },
+            autoFormatSQL() {
+                if (this.autoFormatDelay) {
+                    clearTimeout(this.autoFormatDelay);
+                }
+                this.autoFormatDelay = setTimeout(() => {
+                    if (this.sqlInput.trim()) {
+                        this.formatSQL();
+                    }
+                }, 500);
+            },
             formatJSON() {
                 try {
+                    if (!this.jsonInput.trim()) {
+                        this.jsonOutput = '';
+                        return;
+                    }
                     const parsed = JSON.parse(this.jsonInput);
                     this.jsonOutput = JSON.stringify(parsed, null, 2);
                     this.showToastMessage('格式化成功');
@@ -73,6 +98,10 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             formatSQL() {
                 try {
+                    if (!this.sqlInput.trim()) {
+                        this.sqlOutput = '';
+                        return;
+                    }
                     let sql = this.sqlInput.trim();
                     
                     // 转换关键字为大写
