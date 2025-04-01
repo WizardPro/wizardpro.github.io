@@ -6,74 +6,76 @@
     <title>Wizard的工具箱</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app" :class="themeClass">
+        <!-- 主题切换按钮 -->
+        <div class="theme-toggle" @click="toggleTheme" :title="isDarkTheme ? '切换到浅色主题' : '切换到深色主题'">
+            <svg v-if="isDarkTheme" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </div>
+
+        <!-- 时钟区域 -->
+        <div class="clock">
+            <div class="time" v-text="time"></div>
+            <div class="date" v-text="date"></div>
+            <div class="lunar" v-text="lunar"></div>
+        </div>
+
+        <!-- 工具按钮区域 -->
+        <div class="tool-buttons">
+            <button class="tool-button" @click="showJsonTool = !showJsonTool">
+                JSON格式化
+            </button>
+            <button class="tool-button" @click="showSqlTool = !showSqlTool">
+                SQL格式化
+            </button>
+        </div>
+
+        <!-- JSON工具面板 -->
+        <div v-if="showJsonTool" class="tool-panel">
+            <div class="tool-buttons">
+                <button class="tool-button" @click="formatJSON">格式化 (Ctrl+J)</button>
+                <button class="tool-button" @click="copyJsonOutput">复制结果</button>
+                <button class="tool-button" @click="clearJson">清空</button>
+                <button class="tool-button" @click="jsonWrap = !jsonWrap">{{ jsonWrap ? '禁用换行' : '启用换行' }}</button>
+            </div>
+            <textarea v-model="jsonInput" @input="autoFormatJSON" placeholder="请输入JSON字符串..."></textarea>
+            <pre ref="jsonOutput" :class="{ wrap: jsonWrap }"><code class="language-json">{{ jsonOutput }}</code></pre>
+        </div>
+
+        <!-- SQL工具面板 -->
+        <div v-if="showSqlTool" class="tool-panel">
+            <div class="tool-buttons">
+                <button class="tool-button" @click="formatSQL">格式化 (Ctrl+S)</button>
+                <button class="tool-button" @click="copySqlOutput">复制结果</button>
+                <button class="tool-button" @click="clearSql">清空</button>
+                <button class="tool-button" @click="sqlWrap = !sqlWrap">{{ sqlWrap ? '禁用换行' : '启用换行' }}</button>
+            </div>
+            <textarea v-model="sqlInput" @input="autoFormatSQL" placeholder="请输入SQL语句..."></textarea>
+            <pre ref="sqlOutput" :class="{ wrap: sqlWrap }"><code class="language-sql">{{ sqlOutput }}</code></pre>
+        </div>
+
+        <!-- Toast提示 -->
+        <div class="toast" v-if="showToast">{{ toastMessage }}</div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
-</head>
-<body :class="themeClass" id="app">
-    <!-- 主题切换按钮 -->
-    <div class="theme-toggle" @click="toggleTheme" :title="isDarkTheme ? '切换到浅色主题' : '切换到深色主题'">
-        <svg v-if="isDarkTheme" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-        </svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-    </div>
-
-    <!-- 时钟区域 -->
-    <div class="clock">
-        <div class="time">{{ time }}</div>
-        <div class="date">{{ date }}</div>
-        <div class="lunar">{{ lunar }}</div>
-    </div>
-
-    <!-- 工具按钮区域 -->
-    <div class="tool-buttons">
-        <button class="tool-button" @click="showJsonTool = !showJsonTool">
-            JSON格式化
-        </button>
-        <button class="tool-button" @click="showSqlTool = !showSqlTool">
-            SQL格式化
-        </button>
-    </div>
-
-    <!-- JSON工具面板 -->
-    <div v-if="showJsonTool" class="tool-panel">
-        <div class="tool-buttons">
-            <button class="tool-button" @click="formatJSON">格式化 (Ctrl+J)</button>
-            <button class="tool-button" @click="copyJsonOutput">复制结果</button>
-            <button class="tool-button" @click="clearJson">清空</button>
-            <button class="tool-button" @click="jsonWrap = !jsonWrap">{{ jsonWrap ? '禁用换行' : '启用换行' }}</button>
-        </div>
-        <textarea v-model="jsonInput" @input="autoFormatJSON" placeholder="请输入JSON字符串..."></textarea>
-        <pre ref="jsonOutput" :class="{ wrap: jsonWrap }"><code class="language-json">{{ jsonOutput }}</code></pre>
-    </div>
-
-    <!-- SQL工具面板 -->
-    <div v-if="showSqlTool" class="tool-panel">
-        <div class="tool-buttons">
-            <button class="tool-button" @click="formatSQL">格式化 (Ctrl+S)</button>
-            <button class="tool-button" @click="copySqlOutput">复制结果</button>
-            <button class="tool-button" @click="clearSql">清空</button>
-            <button class="tool-button" @click="sqlWrap = !sqlWrap">{{ sqlWrap ? '禁用换行' : '启用换行' }}</button>
-        </div>
-        <textarea v-model="sqlInput" @input="autoFormatSQL" placeholder="请输入SQL语句..."></textarea>
-        <pre ref="sqlOutput" :class="{ wrap: sqlWrap }"><code class="language-sql">{{ sqlOutput }}</code></pre>
-    </div>
-
-    <!-- Toast提示 -->
-    <div class="toast" v-if="showToast">{{ toastMessage }}</div>
-
     <script src="js/lunar.worker.js"></script>
     <script src="js/app.js"></script>
 </body>
