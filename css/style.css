@@ -103,14 +103,15 @@ body {
     width: 90%;
     max-width: 1200px;
     height: 80vh;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(30, 30, 30, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 20px;
     display: flex;
     flex-direction: column;
     z-index: 1001;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    color: #e0e0e0;
 }
 
 .panel-content {
@@ -133,19 +134,21 @@ body {
 textarea {
     flex: 1;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #444;
     border-radius: 5px;
     font-family: monospace;
     font-size: 14px;
     resize: none;
     white-space: pre;
     overflow: auto;
+    background: rgba(40, 40, 40, 0.95);
+    color: #e0e0e0;
 }
 
 pre {
     flex: 1;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #444;
     border-radius: 5px;
     font-family: monospace;
     font-size: 14px;
@@ -154,6 +157,8 @@ pre {
     white-space: pre;
     width: 100%;
     box-sizing: border-box;
+    background: rgba(40, 40, 40, 0.95);
+    color: #e0e0e0;
 }
 
 pre.wrap {
@@ -192,11 +197,11 @@ pre.wrap {
     background: none;
     cursor: pointer;
     font-size: 20px;
-    color: #666;
+    color: #e0e0e0;
 }
 
 .close-button:hover {
-    color: #000;
+    color: #fff;
 }
 
 /* 滚动条样式 */
@@ -206,17 +211,17 @@ pre.wrap {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #333;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #888;
+    background: #666;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: #888;
 }
 
 /* Toast 提示样式 */
@@ -225,11 +230,12 @@ pre.wrap {
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(30, 30, 30, 0.9);
     color: white;
     padding: 10px 20px;
     border-radius: 5px;
     z-index: 2000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* 响应式布局 */
@@ -260,7 +266,7 @@ pre.wrap {
     text-align: center;
     margin: 0;
     font-size: 1.5rem;
-    color: #333;
+    color: #e0e0e0;
 }
 
 /* 自动换行按钮样式 */
