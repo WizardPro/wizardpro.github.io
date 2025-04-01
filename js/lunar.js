@@ -15,9 +15,6 @@ class Lunar {
     static Zhi = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
     static Animals = ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"];
     static monthName = ["正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊"];
-    static dayName = ["初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
-                     "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
-                     "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"];
 
     lYearDays(y) {
         let i, sum = 348;
@@ -42,76 +39,98 @@ class Lunar {
         return (Lunar.lunarInfo[y - 1900] & (0x10000 >> m)) ? 30 : 29;
     }
 
-    cyclical(num) {
-        return Lunar.Gan[num % 10] + Lunar.Zhi[num % 12];
+    getLunarDay(day) {
+        const nStr1 = ['日', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+        const nStr2 = ['初', '十', '廿', '三'];
+        let str;
+        switch (day) {
+            case 10:
+                str = '初十';
+                break;
+            case 20:
+                str = '二十';
+                break;
+            case 30:
+                str = '三十';
+                break;
+            default:
+                str = nStr2[Math.floor(day / 10)];
+                str += nStr1[day % 10];
+        }
+        return str;
     }
 
     toLunar() {
         let leap = 0, temp = 0;
         let baseDate = new Date(1900, 0, 31);
         let offset = Math.floor((this.date - baseDate) / 86400000);
-        let dayCyl = offset + 40;
-        let monCyl = 14;
+        
+        // 计算年份
         let year = 1900;
-        let yearCyl = offset + 6;
-
-        while (year < 2050 && offset > 0) {
-            temp = this.lYearDays(year);
-            offset -= temp;
-            monCyl += 12;
+        let yearDays = 0;
+        
+        while (offset > 0) {
+            yearDays = this.lYearDays(year);
+            offset -= yearDays;
             year++;
         }
-
-        if (offset < 0) {
-            offset += temp;
-            year--;
-            monCyl -= 12;
-        }
-
+        year--;
+        
+        // 计算月份
+        offset += yearDays;
         let month = 1;
-        let day;
-        leap = this.leapMonth(year);
+        let monthDays = 0;
+        let leapMonth = this.leapMonth(year);
         let isLeap = false;
-
-        while (month < 13 && offset > 0) {
-            if (leap > 0 && month === (leap + 1) && !isLeap) {
-                --month;
+        
+        while (offset > 0) {
+            if (month === (leapMonth + 1) && !isLeap && leapMonth > 0) {
+                monthDays = this.leapDays(year);
                 isLeap = true;
-                temp = this.leapDays(year);
             } else {
-                temp = this.monthDays(year, month);
+                monthDays = this.monthDays(year, month);
+                if (isLeap && month === (leapMonth + 1)) {
+                    isLeap = false;
+                }
+                if (!isLeap) {
+                    month++;
+                }
             }
-
-            if (isLeap && month === (leap + 1)) {
-                isLeap = false;
-            }
-
-            offset -= temp;
-            if (!isLeap) {
-                monCyl++;
-            }
-            month++;
+            offset -= monthDays;
         }
-
-        day = offset + 1;
+        
+        // 计算日期
+        if (offset === 0) {
+            if (leapMonth > 0 && month === leapMonth + 1) {
+                isLeap = true;
+            }
+            if (!isLeap && month > leapMonth) {
+                month--;
+            }
+        }
+        
+        offset += monthDays;
+        let day = offset;
 
         return {
             year: year,
             month: month,
             day: day,
-            isLeap: isLeap,
-            yearCyl: yearCyl,
-            monCyl: monCyl,
-            dayCyl: dayCyl
+            isLeap: isLeap
         };
     }
 
     toString() {
         const lunar = this.toLunar();
         let result = '';
-        result += lunar.isLeap ? '闰' : '';
+        
+        if (lunar.isLeap) {
+            result += '闰';
+        }
+        
         result += Lunar.monthName[lunar.month - 1] + '月';
-        result += Lunar.dayName[lunar.day - 1];
+        result += this.getLunarDay(lunar.day);
+        
         return result;
     }
 }
