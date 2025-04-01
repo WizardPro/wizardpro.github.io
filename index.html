@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>时钟</title>
+    <title>Wizard的工具箱</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.min.js"></script>
@@ -33,7 +33,7 @@
             <button class="close-button" @click="showJsonTool = false">&times;</button>
             <div class="panel-content">
                 <div class="input-area">
-                    <textarea v-model="jsonInput" placeholder="请输入 JSON 文本"></textarea>
+                    <textarea v-model="jsonInput" placeholder="请输入 JSON 文本" @input="autoFormatJSON"></textarea>
                     <div class="button-group">
                         <button class="format-button" @click="formatJSON">格式化</button>
                         <button class="wrap-button" :class="{ active: jsonWrap }" @click="jsonWrap = !jsonWrap">
@@ -57,7 +57,7 @@
             <button class="close-button" @click="showSqlTool = false">&times;</button>
             <div class="panel-content">
                 <div class="input-area">
-                    <textarea v-model="sqlInput" placeholder="请输入 SQL 语句"></textarea>
+                    <textarea v-model="sqlInput" placeholder="请输入 SQL 语句" @input="autoFormatSQL"></textarea>
                     <div class="button-group">
                         <button class="format-button" @click="formatSQL">格式化</button>
                         <button class="wrap-button" :class="{ active: sqlWrap }" @click="sqlWrap = !sqlWrap">
