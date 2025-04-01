@@ -14,11 +14,10 @@ class Lunar {
     static Gan = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
     static Zhi = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
     static Animals = ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"];
-    static solarTerm = ["小寒", "大寒", "立春", "雨水", "惊蛰", "春分", "清明", "谷雨", "立夏", "小满", "芒种", "夏至", "小暑", "大暑", "立秋", "处暑", "白露", "秋分", "寒露", "霜降", "立冬", "小雪", "大雪", "冬至"];
-    static sTermInfo = [0, 21208, 42467, 63836, 85337, 107014, 128867, 150921, 173149, 195551, 218072, 240693, 263343, 285989, 308563, 331033, 353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758];
-    static nStr1 = ['日', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
-    static nStr2 = ['初', '十', '廿', '卅'];
     static monthName = ["正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊"];
+    static dayName = ["初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
+                     "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
+                     "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"];
 
     lYearDays(y) {
         let i, sum = 348;
@@ -72,28 +71,26 @@ class Lunar {
         let month = 1;
         let day;
         leap = this.leapMonth(year);
+        let isLeap = false;
 
         while (month < 13 && offset > 0) {
-            if (leap > 0 && month === (leap + 1) && !temp) {
+            if (leap > 0 && month === (leap + 1) && !isLeap) {
                 --month;
-                temp = true;
+                isLeap = true;
                 temp = this.leapDays(year);
             } else {
                 temp = this.monthDays(year, month);
             }
 
-            if (temp === true) {
-                temp = this.leapDays(year);
+            if (isLeap && month === (leap + 1)) {
+                isLeap = false;
             }
 
             offset -= temp;
-            if (temp === true) {
-                temp = false;
-            }
-            if (!temp) {
+            if (!isLeap) {
                 monCyl++;
-                month++;
             }
+            month++;
         }
 
         day = offset + 1;
@@ -102,7 +99,7 @@ class Lunar {
             year: year,
             month: month,
             day: day,
-            isLeap: temp,
+            isLeap: isLeap,
             yearCyl: yearCyl,
             monCyl: monCyl,
             dayCyl: dayCyl
@@ -114,10 +111,7 @@ class Lunar {
         let result = '';
         result += lunar.isLeap ? '闰' : '';
         result += Lunar.monthName[lunar.month - 1] + '月';
-        result += (lunar.day < 11) ? '初' : ((lunar.day < 20) ? '十' : ((lunar.day < 30) ? '廿' : '三十'));
-        if (lunar.day % 10 || lunar.day === 10) {
-            result += Lunar.nStr1[lunar.day % 10];
-        }
+        result += Lunar.dayName[lunar.day - 1];
         return result;
     }
 }
