@@ -1,18 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded');
+    // 初始化代码高亮
+    if (typeof hljs !== 'undefined') {
+        hljs.configure({
+            languages: ['json', 'sql']
+        });
+    }
+
+    // 初始化农历Worker
+    const lunarWorker = new Worker('js/lunar.worker.js');
     
-    // 确保Vue已加载
-    if (typeof Vue === 'undefined') {
-        console.error('Vue is not loaded!');
-        return;
-    }
-
-    // 确保Lunar已加载
-    if (typeof Lunar === 'undefined') {
-        console.error('Lunar is not loaded!');
-        return;
-    }
-
     new Vue({
         el: '#app',
         data: {
@@ -30,11 +26,37 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast: false,
             toastMessage: '',
             toastTimer: null,
-            autoFormatDelay: null
+            autoFormatDelay: null,
+            isDarkTheme: true,
+            lunarInfo: {},
+            showThemeToggle: false
+        },
+        computed: {
+            themeClass() {
+                return this.isDarkTheme ? 'theme-dark' : 'theme-light';
+            }
         },
         mounted() {
             this.updateTime();
             setInterval(this.updateTime, 1000);
+            
+            // 添加键盘快捷键
+            document.addEventListener('keydown', this.handleKeydown);
+            
+            // 初始化主题
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                this.isDarkTheme = savedTheme === 'dark';
+            }
+            
+            // 监听Worker消息
+            lunarWorker.onmessage = (e) => {
+                this.lunarInfo = e.data;
+                this.updateLunarDisplay();
+            };
+        },
+        beforeDestroy() {
+            document.removeEventListener('keydown', this.handleKeydown);
         },
         methods: {
             updateTime() {
@@ -55,12 +77,52 @@ document.addEventListener('DOMContentLoaded', function() {
                                String(now.getDate()).padStart(2, '0') + '日 星期' +
                                '日一二三四五六'.charAt(now.getDay());
                     
-                    // 更新农历
-                    const lunar = new Lunar(now);
-                    this.lunar = lunar.toString();
+                    // 使用Worker计算农历
+                    lunarWorker.postMessage({ date: now.toISOString() });
                 } catch (error) {
                     console.error('Error updating time:', error);
                 }
+            },
+            updateLunarDisplay() {
+                let result = '';
+                if (this.lunarInfo.isLeap) {
+                    result += '闰';
+                }
+                result += ["正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊"][this.lunarInfo.month - 1] + '月';
+                result += ["初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
+                          "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
+                          "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"][this.lunarInfo.day - 1];
+                
+                if (this.lunarInfo.solarTerm) {
+                    result += ' ' + this.lunarInfo.solarTerm;
+                }
+                
+                this.lunar = result;
+            },
+            handleKeydown(e) {
+                // Ctrl + J: 格式化JSON
+                if (e.ctrlKey && e.key === 'j') {
+                    e.preventDefault();
+                    if (this.showJsonTool) {
+                        this.formatJSON();
+                    }
+                }
+                // Ctrl + S: 格式化SQL
+                else if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    if (this.showSqlTool) {
+                        this.formatSQL();
+                    }
+                }
+                // Esc: 关闭工具面板
+                else if (e.key === 'Escape') {
+                    this.showJsonTool = false;
+                    this.showSqlTool = false;
+                }
+            },
+            toggleTheme() {
+                this.isDarkTheme = !this.isDarkTheme;
+                localStorage.setItem('theme', this.isDarkTheme ? 'dark' : 'light');
             },
             autoFormatJSON() {
                 if (this.autoFormatDelay) {
@@ -90,6 +152,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     const parsed = JSON.parse(this.jsonInput);
                     this.jsonOutput = JSON.stringify(parsed, null, 2);
+                    if (typeof hljs !== 'undefined') {
+                        this.$nextTick(() => {
+                            hljs.highlightElement(this.$refs.jsonOutput);
+                        });
+                    }
                     this.showToastMessage('格式化成功');
                 } catch (error) {
                     this.jsonOutput = '错误：无效的 JSON 格式';
@@ -105,7 +172,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     let sql = this.sqlInput.trim();
                     
                     // 转换关键字为大写
-                    const keywords = ['SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'OFFSET', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'ALTER', 'DROP', 'AND', 'OR', 'IN', 'BETWEEN', 'LIKE', 'IS', 'NULL', 'NOT', 'DISTINCT'];
+                    const keywords = ['SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 
+                                   'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'OFFSET', 'INSERT', 'UPDATE', 
+                                   'DELETE', 'CREATE', 'ALTER', 'DROP', 'AND', 'OR', 'IN', 'BETWEEN', 'LIKE', 
+                                   'IS', 'NULL', 'NOT', 'DISTINCT'];
                     
                     keywords.forEach(keyword => {
                         const regex = new RegExp('\\b' + keyword + '\\b', 'gi');
@@ -128,6 +198,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     sql = sql.replace(/\n+/g, '\n');
                     
                     this.sqlOutput = sql;
+                    if (typeof hljs !== 'undefined') {
+                        this.$nextTick(() => {
+                            hljs.highlightElement(this.$refs.sqlOutput);
+                        });
+                    }
                     this.showToastMessage('格式化成功');
                 } catch (error) {
                     this.sqlOutput = '错误：SQL 格式化失败';
